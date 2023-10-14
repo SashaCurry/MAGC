@@ -266,9 +266,9 @@ cpp_int cubeDecuct(cpp_int a, cpp_int p) { //Кубический вычет
 
 
 pair <cpp_int, cpp_int> addPoints(pair <cpp_int, cpp_int> p, pair <cpp_int, cpp_int> q, cpp_int field) {
-	while (p.first < 0) p.first += field;
+	while (p.first < 0)  p.first += field;
 	while (p.second < 0) p.second += field;
-	while (q.first < 0) q.first += field;
+	while (q.first < 0)  q.first += field;
 	while (q.second < 0) q.second += field;
 
 	cpp_int m, revEl;
@@ -292,22 +292,20 @@ pair <cpp_int, cpp_int> addPoints(pair <cpp_int, cpp_int> p, pair <cpp_int, cpp_
 
 
 pair <cpp_int, cpp_int> scalarMult(cpp_int n, pair <cpp_int, cpp_int> p, cpp_int field) {
-	pair <cpp_int, cpp_int> res = make_pair(0, 0);
 	string nBin = binForm(n);
 	reverse(nBin.begin(), nBin.end());
 
+	pair <cpp_int, cpp_int> res = make_pair(0, 0);
 	if (nBin[0] == '1')
 		res = p;
 	for (int i = 1; i < nBin.size(); i++) {
 		p = addPoints(p, p, field);
-		if (p.first == -1 && p.second == -1 && i != nBin.size())
-			return make_pair(-1, -1);
 		if (nBin[i] == '1' && res.first == 0 && res.second == 0)
 			res = p;
 		else if (nBin[i] == '1') {
 			res = addPoints(res, p, field);
-			if (res.first == 0 && res.second == 0 && i != nBin.size())
-				return make_pair(-1, -1);
+			if (res.first == -1 && res.second == -1 && i != nBin.size() - 1)
+				return make_pair(-2, -2);
 		}
 
 	}
@@ -331,8 +329,8 @@ again:
 	for (int i = 0; i < T.size(); i++) {
 		N = r = p + 1 + T[i];
 		if (miller_rabin(r))                        break;
-		else if (r % 2 == 0 && miller_rabin(r / 2)) r /= 2;
 		else if (r % 3 == 0 && miller_rabin(r / 3)) r /= 3;
+		else if (r % 2 == 0 && miller_rabin(r / 2)) r /= 2;
 		else if (r % 6 == 0 && miller_rabin(r / 6)) r /= 6;
 		else if (i == 5)                            goto again;
 		else                                        continue;
@@ -371,7 +369,8 @@ genPoint:
 	}
 	cout << "\nx0 = " << x0 << ", y0 = " << y0;
 
-	if (scalarMult(N, make_pair(x0, y0), p).first != -1)
+	pair <cpp_int, cpp_int> INF = scalarMult(N, make_pair(x0, y0), p);
+	if (INF.first != -1 || INF.first == -2)
 		goto genPoint;
 
 	pair <cpp_int, cpp_int> Q = scalarMult(N / r, make_pair(x0, y0), p);
@@ -383,7 +382,7 @@ genPoint:
 	fout.open("points.txt");
 	fout << Q.first << " " << Q.second;
 	pair <cpp_int, cpp_int> point = Q;
-	for (int i = 2; i <= r; i++) {
+	for (int i = 2; i < r; i++) {
 		point = addPoints(point, Q, p);
 		fout << endl << point.first << " " << point.second;
 	}
@@ -411,6 +410,11 @@ int main() {
 	}
 
 	genElCurve(l, m);
+	char build;
+	cout << "\n\nПостроить график точек y/n? ";
+	cin >> build;
+	if (build == 'y')
+		system("python ShowPoints.py");
 
 	cout << endl;
 	return 0;
