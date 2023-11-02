@@ -67,19 +67,6 @@ cpp_int pow(cpp_int x, cpp_int y) {
 }
 
 
-cpp_int decForm(string x) {
-	cpp_int res = 0, deg = 1;
-	if (x.back() == '1')
-		res += 1;
-	for (int i = 1; i < x.length(); i++) {
-		deg = deg * 2;
-		if (x[x.length() - i - 1] == '1')
-			res += deg;
-	}
-	return res;
-}
-
-
 string binForm(cpp_int x) {
 	string bitter = "";
 	while (x != 0) {
@@ -247,7 +234,7 @@ genPoint:
 	cpp_int x = rand() % (p - 2) + 2;
 	cpp_int yy = (x * x * x + a * x + b) % p;
 	if (symbolLegendre(yy, p) != 1)
-			goto genPoint;
+		goto genPoint;
 	cpp_int y = sqrtFromZp(yy, p);
 	pair <cpp_int, cpp_int> P = make_pair(x, y);
 	P = make_pair(106, 7);
@@ -258,7 +245,7 @@ genPoint:
 		s += 1;
 	cout << "\ns = " << s;
 
-	set <pair <cpp_int, cpp_int>> tablePs{make_pair(-1, -1)};
+	set <pair <cpp_int, cpp_int>> tablePs{ make_pair(-1, -1) };
 	for (cpp_int i = 1; i <= s; i++) {
 		pair <cpp_int, cpp_int> Pnew = scalarMult(i, P, a, p);
 		tablePs.insert(Pnew);
@@ -266,7 +253,7 @@ genPoint:
 	}
 	cout << "\nTable Ps = ";
 	for (auto i : tablePs)
-			cout << "(" << i.first << ", " << i.second << ") ";
+		cout << "(" << i.first << ", " << i.second << ") ";
 
 	pair <cpp_int, cpp_int> Q = scalarMult(2 * s + 1, P, a, p);
 	pair <cpp_int, cpp_int> R = scalarMult(p + 1, P, a, p);
@@ -288,7 +275,8 @@ genPoint:
 				pairs_ij.push_back(make_pair(i, j));
 	}
 	if (pairs_ij.empty())
-		goto genPoint;
+		for (cpp_int i = -s; i <= s; i++)
+			pairs_ij.push_back(make_pair(0, i));
 	cout << "\nПары (i, j): ";
 	for (int i = 0; i < pairs_ij.size(); i++)
 		cout << "(" << pairs_ij[i].first << ", " << pairs_ij[i].second << ") ";
@@ -302,18 +290,18 @@ genPoint:
 	}
 	cout << "\nКандидаты на порядок ЭК: ";
 	for (int i = 0; i < ms.size(); i++)
-			cout << ms[i] << " ";
+		cout << ms[i] << " ";
 
 	while (ms.size() != 1) {
 		x = rand() % (p - 2) + 2;
-		y = sqrtFromZp(x * x * x + a * x + b, p); 
+		y = sqrtFromZp(x * x * x + a * x + b, p);
 		P = make_pair(x, y);
 		for (int i = 0; i < ms.size(); i++)
 			if (scalarMult(ms[i], P, a, p).first != -1)
 				ms.erase(ms.begin() + i);
-	}	
-	
-	return ms[0];	
+	}
+
+	return ms[0];
 }
 
 
@@ -326,16 +314,20 @@ int main() {
 	cout << "\nВведите параметры эллиптической кривой a, b, p: ";
 	cin >> a >> b >> p;
 
-	if (!a || !b) {
-		cout << "\nНеверный параметр a или b!";
+	if (!a || !b || !p) {
+		cout << "\nНеверный параметр a или b! \n";
+		return 0;
+	}
+	else if ((4 * a * a * a + 27 * b * b) % p == 0) {
+		cout << "\nДанная эллиптическая кривая вырожденная! \n";
 		return 0;
 	}
 	while (!miller_rabin(p)) {
 		cout << "\nр - не простое число! \nВведите р: ";
 		cin >> p;
 	}
-	
+
 	cpp_int m = giantStep_babyStep(a, b, p);
 	cout << "\nПорядок эллиптической кривой: " << m;
-	return 0;	
+	return 0;
 }
