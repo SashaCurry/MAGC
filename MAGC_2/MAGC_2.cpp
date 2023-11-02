@@ -192,21 +192,23 @@ cpp_int sqrtFromZp(cpp_int a, cpp_int p) {
 }
 
 
-pair <cpp_int, cpp_int> addPoints(pair <cpp_int, cpp_int> p, pair <cpp_int, cpp_int> q, cpp_int field) {
+pair <cpp_int, cpp_int> addPoints(pair <cpp_int, cpp_int> p, pair <cpp_int, cpp_int> q, int a, cpp_int field) {
 	while (p.first < 0)  p.first += field;
 	while (p.second < 0) p.second += field;
 	while (q.first < 0)  q.first += field;
 	while (q.second < 0) q.second += field;
+	p.first %= field, p.second %= field;
+	q.first %= field, q.second %= field;
 
 	cpp_int m, revEl;
 	if (p.first == q.first) {
 		if (p.second != q.second)
 			return make_pair(-1, -1);
 		revEl = advancedEuclid(2 * p.second % field, field).first;
-		m = 3 * p.first * p.first * revEl % field;
+		m = (3 * p.first * p.first + a) * revEl % field;
 	}
 	else {
-		revEl = advancedEuclid((p.first % field - q.first % field + field) % field, field).first;
+		revEl = advancedEuclid((p.first - q.first + field) % field, field).first;
 		m = (p.second - q.second) * revEl % field;
 	}
 	cpp_int xR = (m * m - p.first - q.first) % field;
@@ -218,7 +220,7 @@ pair <cpp_int, cpp_int> addPoints(pair <cpp_int, cpp_int> p, pair <cpp_int, cpp_
 }
 
 
-pair <cpp_int, cpp_int> scalarMult(cpp_int n, pair <cpp_int, cpp_int> p, cpp_int field) {
+pair <cpp_int, cpp_int> scalarMult(cpp_int n, pair <cpp_int, cpp_int> p, int a, cpp_int field) {
 	string nBin = binForm(n);
 	reverse(nBin.begin(), nBin.end());
 
@@ -226,11 +228,11 @@ pair <cpp_int, cpp_int> scalarMult(cpp_int n, pair <cpp_int, cpp_int> p, cpp_int
 	if (nBin[0] == '1')
 		res = p;
 	for (int i = 1; i < nBin.size(); i++) {
-		p = addPoints(p, p, field);
+		p = addPoints(p, p, a, field);
 		if (nBin[i] == '1' && res.first == 0 && res.second == 0)
 			res = p;
 		else if (nBin[i] == '1') {
-			res = addPoints(res, p, field);
+			res = addPoints(res, p, a, field);
 			if (res.first == -1 && res.second == -1 && i != nBin.size() - 1)
 				return make_pair(-2, -2);
 		}
@@ -247,10 +249,9 @@ genPoint:
 	if (symbolLegendre(yy, p) != 1)
 			goto genPoint;
 	cpp_int y = sqrtFromZp(yy, p);
-	while (y * y % p != yy)
-  		y = sqrtFromZp(yy, p);
 	pair <cpp_int, cpp_int> P = make_pair(x, y);
-	cout << "\nP = (" << x << ", " << y << ")";
+	P = make_pair(106, 7);
+	cout << "\nP = (" << P.first << ", " << P.second << ")";
 
 	cpp_int s = sqrt(sqrt(p));
 	if (pow(s, 4) != p)
@@ -258,40 +259,45 @@ genPoint:
 	cout << "\ns = " << s;
 
 	set <pair <cpp_int, cpp_int>> tablePs{make_pair(-1, -1)};
-	for (int i = 1; i <= s; i++) {
-		pair <cpp_int, cpp_int> Pnew = scalarMult(i, P, p);
+	for (cpp_int i = 1; i <= s; i++) {
+		pair <cpp_int, cpp_int> Pnew = scalarMult(i, P, a, p);
 		tablePs.insert(Pnew);
-		tablePs.insert(make_pair(Pnew.first, -Pnew.second));
+		tablePs.insert(make_pair(Pnew.first, -Pnew.second + p));
 	}
+	cout << "\nTable Ps = ";
+	for (auto i : tablePs)
+			cout << "(" << i.first << ", " << i.second << ") ";
 
-	pair <cpp_int, cpp_int> Q = scalarMult(2 * s + 1, P, p);
-	pair <cpp_int, cpp_int> R = scalarMult(p + 1, P, p);
+	pair <cpp_int, cpp_int> Q = scalarMult(2 * s + 1, P, a, p);
+	pair <cpp_int, cpp_int> R = scalarMult(p + 1, P, a, p);
 	cout << "\nQ = (" << Q.first << ", " << Q.second << ")";
 	cout << "\nR = (" << R.first << ", " << R.second << ")";
 
 	vector <pair <cpp_int, cpp_int>> pairs_ij;
-	for (int i = 0; i <= s; i++) {
-		pair <cpp_int, cpp_int> iQ = scalarMult(i, Q, p);
-		cout << "\niQ = (" << iQ.first << ", " << iQ.second << ")";
-		pair <cpp_int, cpp_int> posRiQ = addPoints(R, iQ, p);
+	for (int i = 1; i <= s; i++) {
+		pair <cpp_int, cpp_int> iQ = scalarMult(i, Q, a, p);
+		pair <cpp_int, cpp_int> posRiQ = addPoints(R, iQ, a, p);
 		cout << "\nposRiQ = (" << posRiQ.first << ", " << posRiQ.second << ")";
 		if (tablePs.find(posRiQ) != tablePs.end())
 			for (cpp_int j = -s; j <= s; j++)
 				pairs_ij.push_back(make_pair(i, j));
-		pair <cpp_int, cpp_int> negRiQ = addPoints(R, make_pair(iQ.first, -iQ.second), p);
+		pair <cpp_int, cpp_int> negRiQ = addPoints(R, make_pair(iQ.first, -iQ.second), a, p);
 		cout << "\nnegRiQ = (" << negRiQ.first << ", " << negRiQ.second << ")";
 		if (tablePs.find(negRiQ) != tablePs.end())
 			for (cpp_int j = -s; j <= s; j++)
 				pairs_ij.push_back(make_pair(i, j));
 	}
+	if (pairs_ij.empty())
+		goto genPoint;
 	cout << "\nПары (i, j): ";
 	for (int i = 0; i < pairs_ij.size(); i++)
-			cout << "(" << pairs_ij[i].first << ", " << pairs_ij[i].second << ") ";
+		cout << "(" << pairs_ij[i].first << ", " << pairs_ij[i].second << ") ";
 
 	vector <cpp_int> ms;
 	for (int i = 0; i < pairs_ij.size(); i++) {
 		cpp_int m = p + 1 + (2 * s + 1) * pairs_ij[i].first - pairs_ij[i].second;
-		if (scalarMult(m, P, p).first == -1)
+		cout << "\n m = " << m;
+		if (scalarMult(m, P, a, p).first == -1)
 			ms.push_back(m);
 	}
 	cout << "\nКандидаты на порядок ЭК: ";
@@ -303,7 +309,7 @@ genPoint:
 		y = sqrtFromZp(x * x * x + a * x + b, p); 
 		P = make_pair(x, y);
 		for (int i = 0; i < ms.size(); i++)
-			if (scalarMult(ms[i], P, p).first != -1)
+			if (scalarMult(ms[i], P, a, p).first != -1)
 				ms.erase(ms.begin() + i);
 	}	
 	
@@ -329,11 +335,7 @@ int main() {
 		cin >> p;
 	}
 	
-	//cpp_int m = giantStep_babyStep(a, b, p);
-	//cout << "\nПорядок эллиптической кривой: " << m;
-	for (short i = 1; i <= 132; i++) {
-		pair <cpp_int, cpp_int> pnt = scalarMult(i, make_pair(106, 7), 131);
-		cout << "\n" << i << " * (x, y) = (" << pnt.first << ", " << pnt.second << ")";
-	}
+	cpp_int m = giantStep_babyStep(a, b, p);
+	cout << "\nПорядок эллиптической кривой: " << m;
 	return 0;	
 }
