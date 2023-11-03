@@ -237,7 +237,7 @@ genPoint:
 		goto genPoint;
 	cpp_int y = sqrtFromZp(yy, p);
 	pair <cpp_int, cpp_int> P = make_pair(x, y);
-	P = make_pair(106, 7);
+	P = make_pair(44, 112);
 	cout << "\nP = (" << P.first << ", " << P.second << ")";
 
 	cpp_int s = sqrt(sqrt(p));
@@ -261,6 +261,8 @@ genPoint:
 	cout << "\nR = (" << R.first << ", " << R.second << ")";
 
 	vector <pair <cpp_int, cpp_int>> pairs_ij;
+	for (cpp_int i = -s; i <= s; i++)
+		pairs_ij.push_back(make_pair(0, i));
 	for (int i = 1; i <= s; i++) {
 		pair <cpp_int, cpp_int> iQ = scalarMult(i, Q, a, p);
 		pair <cpp_int, cpp_int> posRiQ = addPoints(R, iQ, a, p);
@@ -274,9 +276,6 @@ genPoint:
 			for (cpp_int j = -s; j <= s; j++)
 				pairs_ij.push_back(make_pair(i, j));
 	}
-	if (pairs_ij.empty())
-		for (cpp_int i = -s; i <= s; i++)
-			pairs_ij.push_back(make_pair(0, i));
 	cout << "\nПары (i, j): ";
 	for (int i = 0; i < pairs_ij.size(); i++)
 		cout << "(" << pairs_ij[i].first << ", " << pairs_ij[i].second << ") ";
@@ -293,12 +292,17 @@ genPoint:
 		cout << ms[i] << " ";
 
 	while (ms.size() != 1) {
-		x = rand() % (p - 2) + 2;
-		y = sqrtFromZp(x * x * x + a * x + b, p);
+		cpp_int x = rand() % (p - 2) + 2;
+		cpp_int yy = (x * x * x + a * x + b) % p;
+		if (symbolLegendre(yy, p) != 1)
+			continue;
+		cpp_int y = sqrtFromZp(yy, p);
 		P = make_pair(x, y);
 		for (int i = 0; i < ms.size(); i++)
-			if (scalarMult(ms[i], P, a, p).first != -1)
+			if (scalarMult(ms[i], P, a, p).first != -1) {
+				cout << "\nТочка (" << P.first << ", " << P.second << ") убивает m = " << ms[i];
 				ms.erase(ms.begin() + i);
+			}
 	}
 
 	return ms[0];
