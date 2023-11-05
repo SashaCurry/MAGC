@@ -180,6 +180,11 @@ cpp_int sqrtFromZp(cpp_int a, cpp_int p) {
 
 
 pair <cpp_int, cpp_int> addPoints(pair <cpp_int, cpp_int> p, pair <cpp_int, cpp_int> q, int a, cpp_int field) {
+	if (p.first == -1 && p.second == -1)
+		return q;
+	if (q.first == -1 && q.second == -1)
+		return p;
+
 	while (p.first < 0)  p.first += field;
 	while (p.second < 0) p.second += field;
 	while (q.first < 0)  q.first += field;
@@ -211,7 +216,7 @@ pair <cpp_int, cpp_int> scalarMult(cpp_int n, pair <cpp_int, cpp_int> p, int a, 
 	string nBin = binForm(n);
 	reverse(nBin.begin(), nBin.end());
 
-	pair <cpp_int, cpp_int> res = make_pair(0, 0);
+	pair <cpp_int, cpp_int> res = make_pair(-1, -1);
 	if (nBin[0] == '1')
 		res = p;
 	for (int i = 1; i < nBin.size(); i++) {
@@ -237,7 +242,7 @@ genPoint:
 		goto genPoint;
 	cpp_int y = sqrtFromZp(yy, p);
 	pair <cpp_int, cpp_int> P = make_pair(x, y);
-	P = make_pair(44, 112);
+	//P = make_pair(44, 112);
 	cout << "\nP = (" << P.first << ", " << P.second << ")";
 
 	cpp_int s = sqrt(sqrt(p));
@@ -261,9 +266,7 @@ genPoint:
 	cout << "\nR = (" << R.first << ", " << R.second << ")";
 
 	vector <pair <cpp_int, cpp_int>> pairs_ij;
-	for (cpp_int i = -s; i <= s; i++)
-		pairs_ij.push_back(make_pair(0, i));
-	for (int i = 1; i <= s; i++) {
+	for (cpp_int i = -s; i <= s; i++) {
 		pair <cpp_int, cpp_int> iQ = scalarMult(i, Q, a, p);
 		pair <cpp_int, cpp_int> posRiQ = addPoints(R, iQ, a, p);
 		cout << "\nposRiQ = (" << posRiQ.first << ", " << posRiQ.second << ")";
@@ -283,7 +286,7 @@ genPoint:
 	vector <cpp_int> ms;
 	for (int i = 0; i < pairs_ij.size(); i++) {
 		cpp_int m = p + 1 + (2 * s + 1) * pairs_ij[i].first - pairs_ij[i].second;
-		cout << "\n m = " << m;
+		cout << "\nпри i = " << pairs_ij[i].first << " и j = " << pairs_ij[i].second << " m = " << m;
 		if (scalarMult(m, P, a, p).first == -1)
 			ms.push_back(m);
 	}
