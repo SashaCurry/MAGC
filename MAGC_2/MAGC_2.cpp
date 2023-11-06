@@ -234,26 +234,26 @@ pair <cpp_int, cpp_int> scalarMult(cpp_int n, pair <cpp_int, cpp_int> p, int a, 
 }
 
 
-void changeParameters(pair <cpp_int, cpp_int>& P, cpp_int& s, set <pair <cpp_int, cpp_int>> tablePs, pair <cpp_int, cpp_int>& Q,
-	pair <cpp_int, cpp_int>& R, vector <pair <cpp_int, cpp_int>> pairs_ij, vector <cpp_int>& ms) {
+void changeParameters(pair <cpp_int, cpp_int>& P, cpp_int& s, set <pair <cpp_int, cpp_int>>& tablePs, pair <cpp_int, cpp_int>& Q,
+	pair <cpp_int, cpp_int>& R, vector <pair <cpp_int, cpp_int>>& pairs_ij, vector <cpp_int>& ms) {
 	cout << endl;
 	for (;;) {
 		cout << "\n1 - продолжить \n2 - изменить P \n3 - изменить s \n4 - изменить таблицу из 2s + 1 точек \n5 - изменить Q";
 		cout << "\n6 - изменить R \n7 - изменить пары (i, j) \n8 - изменить кандидатов на порядок ЭК \n";
-		int x;
+		char x;
 		cin >> x;
 		switch (x) {
-		case 1:
+		case '1':
 			return;
-		case 2:
+		case '2':
 			cout << "\nВведите новое значение P: ";
 			cin >> P.first >> P.second;
 			break;
-		case 3:
+		case '3':
 			cout << "\nВведите новое значение s: ";
 			cin >> s;
 			break;
-		case 4: {
+		case '4': {
 			tablePs.clear();
 			cout << "\nВведите количество точек в таблице: ";
 			short n;
@@ -266,15 +266,15 @@ void changeParameters(pair <cpp_int, cpp_int>& P, cpp_int& s, set <pair <cpp_int
 			}
 		}
 			  break;
-		case 5:
+		case '5':
 			cout << "\nВведите новое значение Q: ";
 			cin >> Q.first >> Q.second;
 			break;
-		case 6:
+		case '6':
 			cout << "\nВведите новое значение R: ";
 			cin >> R.first >> R.second;
 			break;
-		case 7: {
+		case '7': {
 			pairs_ij.clear();
 			cout << "\nВведите количество новых пар: ";
 			short n;
@@ -287,7 +287,7 @@ void changeParameters(pair <cpp_int, cpp_int>& P, cpp_int& s, set <pair <cpp_int
 			}
 		}
 			  break;
-		case 8: {
+		case '8': {
 			ms.clear();
 			cout << "Введите количество новых кандидатов на порядок ЭК: ";
 			short n;
@@ -307,24 +307,7 @@ void changeParameters(pair <cpp_int, cpp_int>& P, cpp_int& s, set <pair <cpp_int
 }
 
 
-void putUniqueM(vector <cpp_int>& ms, cpp_int m) {
-	for (int i = 0; i < ms.size(); i++) {
-		if (ms[i] % m == 0) {
-			if (ms[i] > m)
-				ms.erase(ms.begin() + i);
-			else {
-				m = ms[i];
-				ms.erase(ms.begin() + i);
-			}
-			i--;
-		}
-	}
-	ms.push_back(m);
-}
-
-
 cpp_int giantStep_babyStep(int a, int b, cpp_int p) {
-genPoint:
 	pair <cpp_int, cpp_int> P = make_pair(0, 0);
 	cpp_int s = 0;
 	set <pair <cpp_int, cpp_int>> tablePs;
@@ -333,6 +316,7 @@ genPoint:
 	vector <pair <cpp_int, cpp_int>> pairs_ij;
 	vector <cpp_int> ms;
 
+genPoint:
 	cpp_int x = rand() % (p - 2) + 2;
 	cpp_int yy = (x * x * x + a * x + b) % p;
 	if (symbolLegendre(yy, p) != 1)
@@ -342,12 +326,13 @@ genPoint:
 	cout << "\nP = (" << P.first << ", " << P.second << ")";
 	changeParameters(P, s, tablePs, Q, R, pairs_ij, ms);
 
+genS:
 	s = sqrt(sqrt(p));
 	if (pow(s, 4) != p)
 		s += 1;
 	cout << "\ns = " << s;
 	changeParameters(P, s, tablePs, Q, R, pairs_ij, ms);
-
+	
 	tablePs = { make_pair(-1, -1) };
 	for (cpp_int i = 1; i <= s; i++) {
 		pair <cpp_int, cpp_int> Pnew = scalarMult(i, P, a, p);
@@ -359,12 +344,23 @@ genPoint:
 		cout << "(" << i.first << ", " << i.second << ") ";
 	changeParameters(P, s, tablePs, Q, R, pairs_ij, ms);
 
+genQR:	
+	if (sqrt(sqrt(p)) != s && sqrt(sqrt(p)) != s - 1) {
+		cout << "\nПараметры s является некорректным! Вычисление параметра заново";
+		goto genS;
+	}
 	Q = scalarMult(2 * s + 1, P, a, p);
 	R = scalarMult(p + 1, P, a, p);
 	cout << "\nQ = (" << Q.first << ", " << Q.second << ")";
 	cout << "\nR = (" << R.first << ", " << R.second << ")";
+	if (Q.first == -1)
+		goto genPoint;
 	changeParameters(P, s, tablePs, Q, R, pairs_ij, ms);
-
+	
+	if (Q.first == -1) {
+		cout << "\nТочка Q является некорректной! Вычисление точки заново";
+		goto genQR;
+	}
 	for (cpp_int i = 0; i <= s; i++) {
 		pair <cpp_int, cpp_int> iQ = scalarMult(i, Q, a, p);
 		pair <cpp_int, cpp_int> posRiQ = addPoints(R, iQ, a, p);
@@ -384,33 +380,30 @@ genPoint:
 
 	for (int i = 0; i < pairs_ij.size(); i++) {
 		cpp_int m = p + 1 + (2 * s + 1) * pairs_ij[i].first - pairs_ij[i].second;
-		cout << "\nПри i = " << pairs_ij[i].first << " и j = " << pairs_ij[i].second << ", m = " << m;
 		if (scalarMult(m, P, a, p).first == -1 && m > 0)
-			putUniqueM(ms, m);
+			ms.push_back(m);
 	}
 	cout << "\nКандидаты на порядок ЭК: ";
 	for (int i = 0; i < ms.size(); i++)
 		cout << ms[i] << " ";
 	changeParameters(P, s, tablePs, Q, R, pairs_ij, ms);
-
-	while (ms.size() > 1) {
+	
+	for (short k = 0; k < 10 || ms.size() > 1; k++) {
 		cpp_int x = rand() % (p - 2) + 2;
 		cpp_int yy = (x * x * x + a * x + b) % p;
 		if (symbolLegendre(yy, p) != 1)
 			continue;
 		cpp_int y = sqrtFromZp(yy, p);
 		P = make_pair(x, y);
-		for (int i = 0; i < ms.size(); i++) {
-			cout << "\nP = (" << P.first << ", " << P.second << ") * " << ms[i];
+		for (int i = 0; i < ms.size(); i++)
 			if (scalarMult(ms[i], P, a, p).first != -1) {
 				ms.erase(ms.begin() + i);
 				i--;
 			}
-		}
 	}
 
 	if (ms.size() != 1 || scalarMult(ms[0], P, a, p).first != -1) {
-		cout << "\nРезультат не является порядком ЭК! Выполнение алгоритма заново \n";
+		cout << "\nРезультат не является порядком ЭК! Выполнение алгоритма заново";
 		goto genPoint;
 	}
 	return ms[0];
