@@ -1,4 +1,4 @@
-#include "iostream"
+﻿#include "iostream"
 #include "vector"
 #include "string"
 #include "set"
@@ -234,26 +234,39 @@ pair <cpp_int, cpp_int> scalarMult(cpp_int n, pair <cpp_int, cpp_int> p, int a, 
 }
 
 
-void changeParameters(pair <cpp_int, cpp_int>& P, cpp_int& s, set <pair <cpp_int, cpp_int>>& tablePs, pair <cpp_int, cpp_int>& Q,
-	pair <cpp_int, cpp_int>& R, vector <pair <cpp_int, cpp_int>>& pairs_ij, vector <cpp_int>& ms) {
+void changeParameters(pair <cpp_int, cpp_int>& P, cpp_int& s, set <pair <cpp_int, cpp_int>> tablePs, pair <cpp_int, cpp_int>& Q,
+	pair <cpp_int, cpp_int>& R, vector <pair <cpp_int, cpp_int>> pairs_ij, vector <cpp_int>& ms, int a, int b, cpp_int p) {
 	cout << endl;
 	for (;;) {
 		cout << "\n1 - продолжить \n2 - изменить P \n3 - изменить s \n4 - изменить таблицу из 2s + 1 точек \n5 - изменить Q";
 		cout << "\n6 - изменить R \n7 - изменить пары (i, j) \n8 - изменить кандидатов на порядок ЭК \n";
-		char x;
-		cin >> x;
-		switch (x) {
-		case '1':
+		int choice;
+		cin >> choice;
+		switch (choice) {
+		case 1:
 			return;
-		case '2':
+		case 2: {
 			cout << "\nВведите новое значение P: ";
-			cin >> P.first >> P.second;
-			break;
-		case '3':
+			cpp_int x, y;
+			cin >> x >> y;
+			cpp_int yy = (x * x * x + a * x + b) % p;
+			if (y * y % p != yy)
+				cout << "\nТочка P = (" << x << ", " << y << ") не принадлежит эллиптической кривой! \nP = (" << P.first << ", " << P.second << ") \n";
+			else
+				P = make_pair(x, y);
+		}
+			  break;
+		case 3: {
 			cout << "\nВведите новое значение s: ";
-			cin >> s;
-			break;
-		case '4': {
+			cpp_int sNew;
+			cin >> sNew;
+			if (sNew < 0)
+				cout << "\nПараметра s не может быть меньше 0! \ns = " << s << endl;
+			else
+				s = sNew;
+		}
+			  break;
+		case 4: {
 			tablePs.clear();
 			cout << "\nВведите количество точек в таблице: ";
 			short n;
@@ -266,15 +279,24 @@ void changeParameters(pair <cpp_int, cpp_int>& P, cpp_int& s, set <pair <cpp_int
 			}
 		}
 			  break;
-		case '5':
+		case 5: {
 			cout << "\nВведите новое значение Q: ";
 			cin >> Q.first >> Q.second;
-			break;
-		case '6':
+			if (Q.first < 0 && !(Q.first == -1 && Q.second == -1))
+				Q.first += p;
+			if (Q.second < 0 && !(Q.first == -1 && Q.second == -1))
+				Q.second += p;
+		}
+			  break;
+		case 6:
 			cout << "\nВведите новое значение R: ";
 			cin >> R.first >> R.second;
+			if (R.first < 0 && !(R.first == -1 && R.second == -1))
+				R.first += p;
+			if (R.second < 0 && !(R.first == -1 && R.second == -1))
+				R.second += p;
 			break;
-		case '7': {
+		case 7: {
 			pairs_ij.clear();
 			cout << "\nВведите количество новых пар: ";
 			short n;
@@ -287,7 +309,7 @@ void changeParameters(pair <cpp_int, cpp_int>& P, cpp_int& s, set <pair <cpp_int
 			}
 		}
 			  break;
-		case '8': {
+		case 8: {
 			ms.clear();
 			cout << "Введите количество новых кандидатов на порядок ЭК: ";
 			short n;
@@ -301,9 +323,25 @@ void changeParameters(pair <cpp_int, cpp_int>& P, cpp_int& s, set <pair <cpp_int
 		}
 			  break;
 		default:
-			cout << "\nIncorrect! Try again";
+			cout << "Incorrect! Try again";
 		}
 	}
+}
+
+
+void putUniqueM(vector <cpp_int>& ms, cpp_int m) {
+	for (int i = 0; i < ms.size(); i++) {
+		if (max(ms[i], m) % min(ms[i], m) == 0) {
+			if (ms[i] > m)
+				ms.erase(ms.begin() + i);
+			else {
+				m = ms[i];
+				ms.erase(ms.begin() + i);
+			}
+			i--;
+		}
+	}
+	ms.push_back(m);
 }
 
 
@@ -324,15 +362,15 @@ genPoint:
 	cpp_int y = sqrtFromZp(yy, p);
 	P = make_pair(x, y);
 	cout << "\nP = (" << P.first << ", " << P.second << ")";
-	changeParameters(P, s, tablePs, Q, R, pairs_ij, ms);
+	changeParameters(P, s, tablePs, Q, R, pairs_ij, ms, a, b, p);
 
 genS:
 	s = sqrt(sqrt(p));
 	if (pow(s, 4) != p)
 		s += 1;
 	cout << "\ns = " << s;
-	changeParameters(P, s, tablePs, Q, R, pairs_ij, ms);
-	
+	changeParameters(P, s, tablePs, Q, R, pairs_ij, ms, a, b, p);
+
 	tablePs = { make_pair(-1, -1) };
 	for (cpp_int i = 1; i <= s; i++) {
 		pair <cpp_int, cpp_int> Pnew = scalarMult(i, P, a, p);
@@ -342,9 +380,9 @@ genS:
 	cout << "\nТаблица из 2s + 1 точек: ";
 	for (auto i : tablePs)
 		cout << "(" << i.first << ", " << i.second << ") ";
-	changeParameters(P, s, tablePs, Q, R, pairs_ij, ms);
+	changeParameters(P, s, tablePs, Q, R, pairs_ij, ms, a, b, p);
 
-genQR:	
+genQR:
 	if (sqrt(sqrt(p)) != s && sqrt(sqrt(p)) != s - 1) {
 		cout << "\nПараметры s является некорректным! Вычисление параметра заново";
 		goto genS;
@@ -353,12 +391,14 @@ genQR:
 	R = scalarMult(p + 1, P, a, p);
 	cout << "\nQ = (" << Q.first << ", " << Q.second << ")";
 	cout << "\nR = (" << R.first << ", " << R.second << ")";
-	if (Q.first == -1)
-		goto genPoint;
-	changeParameters(P, s, tablePs, Q, R, pairs_ij, ms);
-	
 	if (Q.first == -1) {
-		cout << "\nТочка Q является некорректной! Вычисление точки заново";
+		cout << "\nТочка Q является некорректной! Вычисление точки P заново";
+		goto genPoint;
+	}
+	changeParameters(P, s, tablePs, Q, R, pairs_ij, ms, a, b, p);
+
+	if (Q.first == -1) {
+		cout << "\nТочка Q является некорректной! Вычисление точки Q заново";
 		goto genQR;
 	}
 	for (cpp_int i = 0; i <= s; i++) {
@@ -376,34 +416,37 @@ genQR:
 	cout << "\nПары (i, j): ";
 	for (int i = 0; i < pairs_ij.size(); i++)
 		cout << "(" << pairs_ij[i].first << ", " << pairs_ij[i].second << ") ";
-	changeParameters(P, s, tablePs, Q, R, pairs_ij, ms);
+	changeParameters(P, s, tablePs, Q, R, pairs_ij, ms, a, b, p);
 
 	for (int i = 0; i < pairs_ij.size(); i++) {
 		cpp_int m = p + 1 + (2 * s + 1) * pairs_ij[i].first - pairs_ij[i].second;
+		cout << "\nПри i = " << pairs_ij[i].first << " и j = " << pairs_ij[i].second << ", m = " << m;
 		if (scalarMult(m, P, a, p).first == -1 && m > 0)
-			ms.push_back(m);
+			putUniqueM(ms, m);
 	}
 	cout << "\nКандидаты на порядок ЭК: ";
 	for (int i = 0; i < ms.size(); i++)
 		cout << ms[i] << " ";
-	changeParameters(P, s, tablePs, Q, R, pairs_ij, ms);
-	
-	for (short k = 0; k < 10 || ms.size() > 1; k++) {
+	changeParameters(P, s, tablePs, Q, R, pairs_ij, ms, a, b, p);
+
+	while (ms.size() > 1) {
 		cpp_int x = rand() % (p - 2) + 2;
 		cpp_int yy = (x * x * x + a * x + b) % p;
 		if (symbolLegendre(yy, p) != 1)
 			continue;
 		cpp_int y = sqrtFromZp(yy, p);
 		P = make_pair(x, y);
-		for (int i = 0; i < ms.size(); i++)
+		for (int i = 0; i < ms.size(); i++) {
+			cout << "\nP = (" << P.first << ", " << P.second << ") * " << ms[i];
 			if (scalarMult(ms[i], P, a, p).first != -1) {
 				ms.erase(ms.begin() + i);
 				i--;
 			}
+		}
 	}
 
 	if (ms.size() != 1 || scalarMult(ms[0], P, a, p).first != -1) {
-		cout << "\nРезультат не является порядком ЭК! Выполнение алгоритма заново";
+		cout << "\nРезультат не является порядком ЭК! Выполнение алгоритма заново \n";
 		goto genPoint;
 	}
 	return ms[0];
