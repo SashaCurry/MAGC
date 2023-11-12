@@ -330,6 +330,7 @@ void changeParameters(pair <cpp_int, cpp_int>& P, cpp_int& s, set <pair <cpp_int
 
 
 void putUniqueM(vector <cpp_int>& ms, cpp_int m) {
+
 	for (int i = 0; i < ms.size(); i++) {
 		if (max(ms[i], m) % min(ms[i], m) == 0) {
 			if (ms[i] > m)
@@ -360,6 +361,8 @@ genPoint:
 	if (symbolLegendre(yy, p) != 1)
 		goto genPoint;
 	cpp_int y = sqrtFromZp(yy, p);
+	if (y < 0)
+		y += p;
 	P = make_pair(x, y);
 	cout << "\nP = (" << P.first << ", " << P.second << ")";
 	changeParameters(P, s, tablePs, Q, R, pairs_ij, ms, a, b, p);
@@ -408,7 +411,7 @@ genQR:
 			for (cpp_int j = -s; j <= s; j++)
 				pairs_ij.push_back(make_pair(i, j));
 
-		pair <cpp_int, cpp_int> negRiQ = addPoints(R, make_pair(iQ.first, -iQ.second), a, p);
+		pair <cpp_int, cpp_int> negRiQ = addPoints(R, make_pair(iQ.first, -iQ.second + p), a, p);
 		if (tablePs.find(negRiQ) != tablePs.end())
 			for (cpp_int j = -s; j <= s; j++)
 				pairs_ij.push_back(make_pair(-i, j));
@@ -418,10 +421,11 @@ genQR:
 		cout << "(" << pairs_ij[i].first << ", " << pairs_ij[i].second << ") ";
 	changeParameters(P, s, tablePs, Q, R, pairs_ij, ms, a, b, p);
 
+	cpp_int infinum = p + 1 - 2 * sqrt(p), supremum = p + 1 + 2 * sqrt(p);
 	for (int i = 0; i < pairs_ij.size(); i++) {
 		cpp_int m = p + 1 + (2 * s + 1) * pairs_ij[i].first - pairs_ij[i].second;
 		cout << "\nПри i = " << pairs_ij[i].first << " и j = " << pairs_ij[i].second << ", m = " << m;
-		if (scalarMult(m, P, a, p).first == -1 && m > 0)
+		if (scalarMult(m, P, a, p).first == -1 && m > 0 && infinum < m && m < supremum)
 			putUniqueM(ms, m);
 	}
 	cout << "\nКандидаты на порядок ЭК: ";
@@ -429,7 +433,7 @@ genQR:
 		cout << ms[i] << " ";
 	changeParameters(P, s, tablePs, Q, R, pairs_ij, ms, a, b, p);
 
-	while (ms.size() > 1) {
+	for (short k = 0; ms.size() > 1 && k < 1000; k++) {
 		cpp_int x = rand() % (p - 2) + 2;
 		cpp_int yy = (x * x * x + a * x + b) % p;
 		if (symbolLegendre(yy, p) != 1)
@@ -445,11 +449,15 @@ genQR:
 		}
 	}
 
-	if (ms.size() != 1 || scalarMult(ms[0], P, a, p).first != -1) {
+	cpp_int mRes = ms[0];
+	for (short i = 1; i < ms.size(); i++)
+		if (ms[i] < mRes)
+			mRes = ms[i];
+	if (scalarMult(mRes, P, a, p).first != -1) {
 		cout << "\nРезультат не является порядком ЭК! Выполнение алгоритма заново \n";
 		goto genPoint;
 	}
-	return ms[0];
+	return mRes;
 }
 
 
