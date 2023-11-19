@@ -9,6 +9,14 @@
 
 using namespace std;
 using namespace boost::multiprecision;
+using std::hash;
+
+template <typename T>
+std::string to_string(const T& n) {
+	std::ostringstream ss;
+	ss << n;
+	return ss.str();
+}
 
 class Pattern {
 private:
@@ -252,12 +260,13 @@ private:
 		while (pMin % 6 != 1)
 			pMin++;
 
-		for (p; p <= pMax; p += 6)
+		for (; p <= pMax; p += 6)
 			if (Pattern::miller_rabin(p))
 				return p;
-		for (pMin; pMin < p; pMin += 6)
+		for (; pMin < p; pMin += 6)
 			if (Pattern::miller_rabin(pMin))
 				return pMin;
+		return 0;
 	}
 
 
@@ -310,10 +319,10 @@ private:
 		for (int j = 1; (u * u) % p - p != -3; j++)
 			u = sqrtFromZp(-D + p, p);
 
-		int i = 0;
+		int i;
 		vector <cpp_int> us{ u };
 		vector <cpp_int> ms{ p };
-		for (i;; i++) {
+		for (i = 0;; i++) {
 			ms.push_back((us[i] * us[i] + D) / ms[i]);
 			us.push_back(min(us[i] % ms[i + 1], ms[i + 1] - us[i] % ms[i + 1]));
 			if (ms[i + 1] == 1)
@@ -322,7 +331,7 @@ private:
 
 		vector <cpp_int> as(i + 1, us[i]);
 		vector <cpp_int> bs(i + 1, 1);
-		for (i; i != 0; i--) {
+		for (; i != 0; i--) {
 			if ((us[i - 1] * as[i] + D * bs[i]) % (as[i] * as[i] + D * bs[i] * bs[i]) == 0)
 				as[i - 1] = (us[i - 1] * as[i] + D * bs[i]) / (as[i] * as[i] + D * bs[i] * bs[i]);
 			else
@@ -600,8 +609,9 @@ public:
 
 	void createSignature() {
 	genK:
-		cout << "\nВырабатывание случайного числа k, 0 < k < r: \n";
-		system("pause");
+		cout << "\nВырабатывание случайного числа k, 0 < k < r:";
+		cin.get();
+		cin.get();
 		getData();
 		checkParams(true);
 		cpp_int k = rand() % (r - 1) + 1;
@@ -609,8 +619,8 @@ public:
 		File::write(to_string(k), "k.txt");
 
 
-		cout << "\n\nВычисление точки R = kQ: \n";
-		system("pause");
+		cout << "\n\nВычисление точки R = kQ:";
+		cin.get();
 		getData();
 		checkParams(true);
 		string strK = File::read("k.txt");
@@ -623,8 +633,8 @@ public:
 		cout << "R = (" << R.first << ", " << R.second << ")";
 		File::write(to_string(R.first) + " " + to_string(R.second), "R.txt");
 
-		cout << "\n\nВычисление хэш-функции e = h(m, R): \n";
-		system("pause");
+		cout << "\n\nВычисление хэш-функции e = h(m, R):";
+		cin.get();
 		getData();
 		checkParams(true);
 		strK = File::read("k.txt");
@@ -654,8 +664,8 @@ public:
 		}
 		File::write(to_string(e), "e.txt");
 
-		cout << "\n\nВычисление числа s = le + k (mod r): \n";
-		system("pause");
+		cout << "\n\nВычисление числа s = le + k (mod r):";
+		cin.get();
 		getData();
 		checkParams();
 		strK = File::read("k.txt");
@@ -680,8 +690,9 @@ public:
 		cpp_int m = cpp_int(hashString(File::read("m.txt")));
 		checkParams();
 
-		cout << "\nВычисление точки R\' = sQ - eP: \n";
-		system("pause");
+		cout << "\nВычисление точки R\' = sQ - eP:";
+		cin.get();
+		cin.get();
 		getData();
 		checkParams();
 		this->e = cpp_int(File::read("e.txt"));
@@ -703,8 +714,8 @@ public:
 		cout << "R\' = (" << R_.first << ", " << R_.second << ")";
 		File::write(to_string(R_.first) + " " + to_string(R_.second), "R_.txt");
 
-		cout << "\n\nВычисление e\' = h(m, R\'): \n";
-		system("pause");
+		cout << "\n\nВычисление e\' = h(m, R\'):";
+		cin.get();
 		string strR_ = File::read("R_.txt");
 		for (short i = 0; i < strR_.length(); i++) {
 			if (strR_[i] == ' ') {
@@ -720,9 +731,9 @@ public:
 		cout << "e\' = " << e_;
 
 		if (e_ == cpp_int(File::read("e.txt")))
-			cout << "\nПодпись действительна \n";
+			cout << "\n\nПодпись действительна \n";
 		else
-			cout << "\nПодпись недействительна \n";
+			cout << "\n\nПодпись недействительна \n";
 	}
 };
 
