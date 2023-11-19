@@ -10,27 +10,6 @@
 using namespace std;
 using namespace boost::multiprecision;
 
-map <char, string> book{ {'0', "11"}, {'1', "12"}, {'2', "13"}, {'3', "14"}, {'4', "15"}, {'5', "16"}, {'6', "17"}, {'7', "18"}, {'8', "19"}, {'9', "21"},
-						 {' ', "22"}, {'!', "23"}, {'"', "24"}, {'#', "25"}, {'$', "26"}, {'%', "27"}, {'^', "28"}, {'&', "29"}, {'\'', "31"}, {'(', "32"},
-						 {')', "33"}, {'*', "34"}, {'+', "35"}, {',', "36"}, {'-', "37"}, {'.', "38"}, {'/', "39"}, {':', "41"}, {';', "42"}, {'<', "43"},
-						 {'=', "44"}, {'>', "45"}, {'?', "46"}, {'@', "47"}, {'[', "48"}, {'\\', "49"}, {']', "51"}, {'_', "52"}, {'`', "53"}, {'{', "54"},
-						 {'}', "55"}, {'|', "56"}, {'~', "57"}, {'\n', "58"}, {'а', "59"}, {'б', "61"}, {'в', "62"}, {'г', "63"}, {'д', "64"}, {'е', "65"},
-						 {'ё', "66"}, {'ж', "67"}, {'з', "68"}, {'и', "69"}, {'й', "71"}, {'к', "72"}, {'л', "73"}, {'м', "74"}, {'н', "75"}, {'о', "76"},
-						 {'п', "77"}, {'р', "78"}, {'с', "79"}, {'т', "81"}, {'у', "82"}, {'ф', "83"}, {'х', "84"}, {'ц', "85"}, {'ч', "86"}, {'ш', "87"},
-						 {'щ', "88"}, {'ъ', "89"}, {'ы', "91"}, {'ь', "92"}, {'э', "93"}, {'ю', "94"}, {'я', "95"} };
-
-map <string, char> bookRvs{ {"11", '0'}, {"12", '1'}, {"13", '2'}, {"14", '3'}, {"15", '4'}, {"16", '5'}, {"17", '6'}, {"18", '7'}, {"19", '8'}, {"21", '9'},
-							{"22", ' '}, {"23", '!'}, {"24", '"'}, {"25", '#'}, {"26", '$'}, {"27", '%'}, {"28", '^'}, {"29", '&'}, {"31", '\''}, {"32", '('},
-							{"33", ')'}, {"34", '*'}, {"35", '+'}, {"36", ','}, {"37", '-'}, {"38", '.'}, {"39", '/'}, {"41", ':'}, {"42", ';'}, {"43", '<'},
-							{"44", '='}, {"45", '>'}, {"46", '?'}, {"47", '@'}, {"48", '['}, {"49", '\\'}, {"51", ']'}, {"52", '_'}, {"53", '`'}, {"54", '{'},
-							{"55", '}'}, {"56", '|'}, {"57", '~'}, {"58", '\n'}, {"59", 'а'}, {"61", 'б'}, {"62", 'в'}, {"63", 'г'}, {"64", 'д'}, {"65", 'е'},
-							{"66", 'ё'}, {"67", 'ж'}, {"68", 'з'}, {"69", 'и'}, {"71", 'й'}, {"72", 'к'}, {"73", 'л'}, {"74", 'м'}, {"75", 'н'}, {"76", 'о'},
-							{"77", 'п'}, {"78", 'р'}, {"79", 'с'}, {"81", 'т'}, {"82", 'у'}, {"83", 'ф'}, {"84", 'х'}, {"85", 'ц'}, {"86", 'ч'}, {"87", 'ш'},
-							{"88", 'щ'}, {"89", 'ъ'}, {"91", 'ы'}, {"92", 'ь'}, {"93", 'э'}, {"94", 'ю'}, {"95", 'я'} };
-
-set <char> upSymbs{ 'А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ё', 'Ж', 'З', 'И', 'Й', 'К', 'Л', 'М', 'Н', 'О', 'П',
-					'Р', 'С', 'Т', 'У', 'Ф', 'Ч', 'Ц', 'Ч', 'Ш', 'Щ', 'Ъ', 'Ы', 'Ь', 'Э', 'Ю', 'Я' };
-
 class Pattern {
 private:
 	static vector <cpp_int> deg2(cpp_int el, cpp_int n) {
@@ -180,6 +159,7 @@ public:
 
 	static cpp_int hashFun(cpp_int m, pair <cpp_int, cpp_int> R) {
 		hash <cpp_int> hashCpp_int;
+		hash <string> hashString;
 		string res = to_string(hashCpp_int(m)) + to_string(hashCpp_int(R.first)) + to_string(hashCpp_int(R.second));
 		return cpp_int(res);
 	}
@@ -494,227 +474,258 @@ public:
 
 
 
-void genOpenKeys() {
-	int startL, startM;
-	cout << "\nДлина характеристики поля l (l > 2): ";
-	cin >> startL;
-	while (!startL || startL < 3) {
-		cout << "Некорректный ввод данных! \n";
+class Signature {
+private:
+	cpp_int p, b, r, l;
+	cpp_int e, s;
+	pair <cpp_int, cpp_int> P, Q;
+
+	void getData() {
+		string str;
+		str = File::read("l.txt");
+		if (!Pattern::checkStrDigit(str))
+			throw string{ "Файл l.txt был изменён!" };
+		this->l = cpp_int(str);
+
+		str = File::read("P.txt");
+		for (short i = 0; i < str.length(); i++)
+			if (str[i] == ' ') {
+				if (Pattern::checkStrDigit(str.substr(0, i)) && Pattern::checkStrDigit(str.substr(i + 1)))
+					this->P = make_pair(cpp_int(str.substr(0, i)), cpp_int(str.substr(i + 1)));
+				else
+					throw string{ "Файл P.txt был изменён!" };
+			}
+		if (P.first == 0 && P.second == 0)
+			throw string{ "Файл P.txt был изменён!" };
+
+		str = File::read("p,b,Q,r.txt");
+		short startNum = 0;
+		char part = 'p';
+		for (short i = 0; i <= str.length(); i++)
+			if (str[i] == '\n' || str[i] == ' ') {
+				if (Pattern::checkStrDigit(str.substr(startNum, i - startNum))) {
+					switch (part) {
+					case 'p':
+						this->p = cpp_int(str.substr(0, i - startNum));
+						part = 'b';
+						startNum = i + 1;
+						break;
+					case 'b':
+						this->b = cpp_int(str.substr(startNum, i - startNum));
+						part = 'Q';
+						startNum = i + 1;
+						break;
+					case 'Q':
+						if (str[i] == ' ') {
+							this->Q.first = cpp_int(str.substr(startNum, i - startNum));
+							startNum = i + 1;
+						}
+						else {
+							this->Q.second = cpp_int(str.substr(startNum, i - startNum));
+							part = 'r';
+							startNum = i + 1;
+						}
+						break;
+					case 'r':
+						this->r = cpp_int(str.substr(startNum, i - startNum));
+						part = ' ';
+						break;
+					}
+				}
+				else
+					throw string{ "Файл p,b,Q,r.txt был изменён!" };
+			}
+	}
+
+
+	void checkParams(bool lCheck = false) {
+		if (!Pattern::miller_rabin(p))
+			throw string{ "\nПараметр p = " + to_string(p) + " не является простым числом!" };
+		if (b < 1 || b > p - 1)
+			throw string{ "\nПараметр b = " + to_string(b) + " должен быть в диапазоне 1 < b < p" };
+		if (Q.second * Q.second % p != (Q.first * Q.first * Q.first + b) % p)
+			throw string{ "\nПараметр Q = (" + to_string(Q.first) + ", " + to_string(Q.second) + ") не принадлежит кривой!" };
+		if (PointArithmetic::scalarMult(r, Q, p).first != -1)
+			throw string{ "\nПараметр Q = (" + to_string(Q.first) + ", " + to_string(Q.second) + ") или r = " + to_string(r) + " не является образующим!" };
+
+		if (lCheck) {
+			if (PointArithmetic::scalarMult(l, Q, p) != P || P.second * P.second % p != (P.first * P.first * P.first + b) % p)
+				throw string{ "\nПараметр P = (" + to_string(P.first) + ", " + to_string(P.second) + ") не принадлежит кривой или P не равен lQ!" };
+			if (l < 1 || l > r - 1)
+				throw string{ "\nПараметр l = " + to_string(l) + " должен быть в диапазоне 1 < l < r" };
+		}
+		else 
+			if (P.second * P.second % p != (P.first * P.first * P.first + b) % p)
+				throw string{ "\nПараметр P = (" + to_string(P.first) + ", " + to_string(P.second) + ") не принадлежит кривой" };
+	}
+public:
+	void genKeys() {
+		int startL, startM;
+		cout << "\nДлина характеристики поля l (l > 2): ";
 		cin >> startL;
-	}
-	cout << "Параметр безопасности m: ";
-	cin >> startM;
-	while (!startM || startM < 0) {
-		cout << "Некорректный ввод данных! \n";
+		while (!startL || startL < 3) {
+			cout << "Некорректный ввод данных! \n";
+			cin >> startL;
+		}
+		cout << "Параметр безопасности m: ";
 		cin >> startM;
-	}
-
-	EllipticCurve E(startL, startM);
-
-	File::write(to_string(E.get_p()), "p,b,Q,r.txt");
-	File::append(to_string(E.get_b()), "p,b,Q,r.txt");
-	string generator = to_string(E.get_Q().first) + " " + to_string(E.get_Q().second);
-	File::append(generator, "p,b,Q,r.txt");
-	File::append(to_string(E.get_r()) + '\n', "p,b,Q,r.txt");
-
-	short lBinSize = rand() % 30 + 5;
-	string lBin = "";
-	for (short i = 0; i < lBinSize; i++)
-		lBin += to_string(rand() % 2);
-	cpp_int l = Pattern::decForm(lBin) % (E.get_r() - 1) + 1;
-	File::write(to_string(l), "l.txt");
-
-	pair <cpp_int, cpp_int> P = PointArithmetic::scalarMult(l, E.get_Q(), E.get_p());
-	string PinFile = to_string(P.first) + " " + to_string(P.second);
-	File::write(PinFile, "P.txt");
-
-	cout << "\np = " << E.get_p() << "\nb = " << E.get_b() << "\nQ = (" << E.get_Q().first << ", " << E.get_Q().second << ")";
-	cout << "\nr = " << E.get_r() << "\nl = " << l << "\nP = (" << P.first << ", " << P.second << ")\nКлючи записаны в файлы \n";
-}
-
-
-void createSignature() {
-	string str;
-	str = File::read("l.txt");
-	if (!Pattern::checkStrDigit(str)) {
-		throw string{ "Файл l.txt был изменён!" };
-	}
-	cpp_int l = cpp_int(str);
-
-	pair <cpp_int, cpp_int> P;
-	str = File::read("P.txt");
-	for (short i = 0; i < str.length(); i++)
-		if (str[i] == ' ') {
-			if (Pattern::checkStrDigit(str.substr(0, i)) && Pattern::checkStrDigit(str.substr(i + 1)))
-				P = make_pair(cpp_int(str.substr(0, i)), cpp_int(str.substr(i + 1)));
-			else
-				throw string{ "Файл P.txt был изменён!" };
+		while (!startM || startM < 0) {
+			cout << "Некорректный ввод данных! \n";
+			cin >> startM;
 		}
 
-	cpp_int p, b, r;
-	pair <cpp_int, cpp_int> Q;
-	str = File::read("p,b,Q,r.txt");
-	short startNum = 0;
-	char part = 'p';
-	for (short i = 0; i <= str.length(); i++)
-		if (str[i] == '\n' || str[i] == ' ') {
-			if (Pattern::checkStrDigit(str.substr(startNum, i - startNum))) {
-				switch (part) {
-				case 'p':
-					p = cpp_int(str.substr(0, i - startNum));
-					part = 'b';
-					startNum = i + 1;
-					break;
-				case 'b':
-					b = cpp_int(str.substr(startNum, i - startNum));
-					part = 'Q';
-					startNum = i + 1;
-					break;
-				case 'Q':
-					if (str[i] == ' ') {
-						Q.first = cpp_int(str.substr(startNum, i - startNum));
-						startNum = i + 1;
-					}
-					else {
-						Q.second = cpp_int(str.substr(startNum, i - startNum));
-						part = 'r';
-						startNum = i + 1;
-					}
-					break;
-				case 'r':
-					r = cpp_int(str.substr(startNum, i - startNum));
-					break;
-				}
+		EllipticCurve E(startL, startM);
+
+		File::write(to_string(E.get_p()), "p,b,Q,r.txt");
+		File::append(to_string(E.get_b()), "p,b,Q,r.txt");
+		string generator = to_string(E.get_Q().first) + " " + to_string(E.get_Q().second);
+		File::append(generator, "p,b,Q,r.txt");
+		File::append(to_string(E.get_r()) + '\n', "p,b,Q,r.txt");
+
+		short lBinSize = rand() % 30 + 5;
+		string lBin = "";
+		for (short i = 0; i < lBinSize; i++)
+			lBin += to_string(rand() % 2);
+		cpp_int l = Pattern::decForm(lBin) % (E.get_r() - 1) + 1;
+		File::write(to_string(l), "l.txt");
+
+		pair <cpp_int, cpp_int> P = PointArithmetic::scalarMult(l, E.get_Q(), E.get_p());
+		string PinFile = to_string(P.first) + " " + to_string(P.second);
+		File::write(PinFile, "P.txt");
+
+		cout << "\np = " << E.get_p() << "\nb = " << E.get_b() << "\nQ = (" << E.get_Q().first << ", " << E.get_Q().second << ")";
+		cout << "\nr = " << E.get_r() << "\nl = " << l << "\nP = (" << P.first << ", " << P.second << ")\nКлючи записаны в файлы \n";
+	}
+
+
+	void createSignature() {
+	genK:
+		cout << "\nВырабатывание случайного числа k, 0 < k < r: \n";
+		system("pause");
+		getData();
+		checkParams(true);
+		cpp_int k = rand() % (r - 1) + 1;
+		cout << "k = " << k;
+		File::write(to_string(k), "k.txt");
+
+
+		cout << "\n\nВычисление точки R = kQ: \n";
+		system("pause");
+		getData();
+		checkParams(true);
+		string strK = File::read("k.txt");
+		if (!(Pattern::checkStrDigit(strK)))
+			throw string{ "\nПараметр k = " + to_string(k) + " был изменён!" };
+		k = cpp_int(strK);
+		if ((k < 1 || k > r - 1))
+			throw string{ "\nПараметр k = " + to_string(k) + " был изменён!" };
+		pair <cpp_int, cpp_int> R = PointArithmetic::scalarMult(k, Q, p);
+		cout << "R = (" << R.first << ", " << R.second << ")";
+		File::write(to_string(R.first) + " " + to_string(R.second), "R.txt");
+
+		cout << "\n\nВычисление хэш-функции e = h(m, R): \n";
+		system("pause");
+		getData();
+		checkParams(true);
+		strK = File::read("k.txt");
+		if (!(Pattern::checkStrDigit(strK)))
+			throw string{ "\nПараметр k = " + to_string(k) + " был изменён!" };
+		k = cpp_int(strK);
+		if ((k < 1 || k > r - 1))
+			throw string{ "\nПараметр k = " + to_string(k) + " был изменён!" };
+		hash <string> hashString;
+		cpp_int m = cpp_int(hashString(File::read("m.txt")));
+		string strR = File::read("R.txt");
+		for (short i = 0; i < strR.length(); i++) {
+			if (strR[i] == ' ') {
+				if (Pattern::checkStrDigit(strR.substr(0, i)) && Pattern::checkStrDigit(strR.substr(i + 1)))
+					R = make_pair(cpp_int(strR.substr(0, i)), cpp_int(strR.substr(i + 1)));
+				else
+					throw string{ "\nПараметр R = (" + to_string(R.first) + ", " + to_string(R.second) + ") бы изменён!" };
 			}
-			else
-				throw string{ "Файл p,b,Q,r.txt был изменён!" };
 		}
+		if (R.second * R.second % p != (R.first * R.first * R.first + b) % p)
+			throw string{ "\nПараметр R = (" + to_string(R.first) + ", " + to_string(R.second) + ") не принадлежит кривой!" };
+		cpp_int e = Pattern::hashFun(m, R) % r;
+		cout << "e = " << e;
+		if (e == 0) {
+			cout << "\nЗначение e не может быть равно 0. Генерация k заново... \n";
+			goto genK;
+		}
+		File::write(to_string(e), "e.txt");
 
-	if (!Pattern::miller_rabin(p))
-		throw string{ "\nПараметр p = " + to_string(p) + " не является простым числом!" };
-	if (b < 1 || b > p - 1)
-		throw string{ "\nПараметр b = " + to_string(b) + " должен быть в диапазоне 1 < b < p" };
-	if (Q.second * Q.second % p != (Q.first * Q.first * Q.first + b) % p)
-		throw string{ "\nПараметр Q = (" + to_string(Q.first) + ", " + to_string(Q.second) + ") не принадлежит кривой!" };
-	if (PointArithmetic::scalarMult(r, Q, p).first != -1)
-		throw string{ "\nПараметр Q = (" + to_string(Q.first) + ", " + to_string(Q.second) + ") или r = " + to_string(r) + " не является образующим!" };
-	if (PointArithmetic::scalarMult(l, Q, p) != P || P.second * P.second % p != (P.first * P.first * P.first + b) % p)
-		throw string{ "\nПараметр P = (" + to_string(P.first) + ", " + to_string(P.second) + ") не принадлежит кривой или P не равен lQ!" };
-	if (l < 1 || l > r - 1)
-		throw string{ "\nПараметр l = " + to_string(l) + " должен быть в диапазоне 1 < l < r" };
+		cout << "\n\nВычисление числа s = le + k (mod r): \n";
+		system("pause");
+		getData();
+		checkParams();
+		strK = File::read("k.txt");
+		if (!(Pattern::checkStrDigit(strK)))
+			throw string{ "\nПараметр k = " + to_string(k) + " был изменён!" };
+		k = cpp_int(strK);
+		if ((k < 1 || k > r - 1))
+			throw string{ "\nПараметр k = " + to_string(k) + " был изменён!" };
+		this->l = cpp_int(File::read("l.txt"));
+		this->e = cpp_int(File::read("e.txt"));
+		this->s = (this->l * this->e + k) % this->r;
+		cout << "s = " << this->s;
+		File::write(to_string(s), "s.txt");
 
-	str = File::read("m.txt");
-	string mCode = "";
-	for (short i = 0; i < str.length(); i++) {
-		if (upSymbs.find(str[i]) != upSymbs.end())
-			mCode += book[char(str[i] + 32)];
-		else
-			mCode += book[str[i]];
+		cout << "\n\nДанные успешно записаны в файлы \n";
 	}
-	cpp_int m = cpp_int(mCode);
-
-genK:
-	cpp_int k = rand() % (r - 1) + 1;
-	pair <cpp_int, cpp_int> R = PointArithmetic::scalarMult(k, Q, p);
-
-	cpp_int e = Pattern::hashFun(m, R) % r;
-	if (e == 0)
-		goto genK;
-	cpp_int s = (l * e + k) % r;
-
-	File::write(to_string(e), "e.txt");
-	File::write(to_string(s), "s.txt");
-	cout << "\nm = " << m << "\ne = " << e << "\ns = " << s << "\nДанные успешно записаны в файлы \n";
-}
 
 
-void checkSignature() {
-	string str;
+	void checkSignature() {
+		getData();
+		hash <string> hashString;
+		cpp_int m = cpp_int(hashString(File::read("m.txt")));
+		checkParams();
 
-	pair <cpp_int, cpp_int> P;
-	str = File::read("P.txt");
-	for (short i = 0; i < str.length(); i++)
-		if (str[i] == ' ') {
-			if (Pattern::checkStrDigit(str.substr(0, i)) && Pattern::checkStrDigit(str.substr(i + 1)))
-				P = make_pair(cpp_int(str.substr(0, i)), cpp_int(str.substr(i + 1)));
-			else
-				throw string{ "Файл P.txt был изменён!" };
-		}
-
-	cpp_int p, b, r;
-	pair <cpp_int, cpp_int> Q;
-	str = File::read("p,b,Q,r.txt");
-	short startNum = 0;
-	char part = 'p';
-	for (short i = 0; i <= str.length(); i++)
-		if (str[i] == '\n' || str[i] == ' ') {
-			if (Pattern::checkStrDigit(str.substr(startNum, i - startNum))) {
-				switch (part) {
-				case 'p':
-					p = cpp_int(str.substr(0, i - startNum));
-					part = 'b';
-					startNum = i + 1;
-					break;
-				case 'b':
-					b = cpp_int(str.substr(startNum, i - startNum));
-					part = 'Q';
-					startNum = i + 1;
-					break;
-				case 'Q':
-					if (str[i] == ' ') {
-						Q.first = cpp_int(str.substr(startNum, i - startNum));
-						startNum = i + 1;
-					}
-					else {
-						Q.second = cpp_int(str.substr(startNum, i - startNum));
-						part = 'r';
-						startNum = i + 1;
-					}
-					break;
-				case 'r':
-					r = cpp_int(str.substr(startNum, i - startNum));
-					break;
-				}
+		cout << "\nВычисление точки R\' = sQ - eP: \n";
+		system("pause");
+		getData();
+		checkParams();
+		this->e = cpp_int(File::read("e.txt"));
+		this->s = cpp_int(File::read("s.txt"));
+		string strP = File::read("P.txt");
+		for (short i = 0; i < strP.length(); i++) {
+			if (strP[i] == ' ') {
+				if (Pattern::checkStrDigit(strP.substr(0, i)) && Pattern::checkStrDigit(strP.substr(i + 1)))
+					P = make_pair(cpp_int(strP.substr(0, i)), cpp_int(strP.substr(i + 1)));
+				else
+					throw string{ "\nПараметр P = (" + to_string(P.first) + ", " + to_string(P.second) + ") бы изменён!" };
 			}
-			else
-				throw string{ "Файл p,b,Q,r.txt был изменён!" };
 		}
+		if (P.second * P.second % p != (P.first * P.first * P.first + b) % p)
+			throw string{ "\nПараметр P = (" + to_string(P.first) + ", " + to_string(P.second) + ") не принадлежит кривой!" };
+		pair <cpp_int, cpp_int> sQ = PointArithmetic::scalarMult(s, Q, p);
+		pair <cpp_int, cpp_int> eP = PointArithmetic::scalarMult(e, P, p);
+		pair <cpp_int, cpp_int> R_ = PointArithmetic::addPoints(sQ, make_pair(eP.first, -eP.second), p);
+		cout << "R\' = (" << R_.first << ", " << R_.second << ")";
+		File::write(to_string(R_.first) + " " + to_string(R_.second), "R_.txt");
 
-	str = File::read("m.txt");
-	string mCode = "";
-	for (short i = 0; i < str.length(); i++) {
-		if (upSymbs.find(str[i]) != upSymbs.end())
-			mCode += book[char(str[i] + 32)];
+		cout << "\n\nВычисление e\' = h(m, R\'): \n";
+		system("pause");
+		string strR_ = File::read("R_.txt");
+		for (short i = 0; i < strR_.length(); i++) {
+			if (strR_[i] == ' ') {
+				if (Pattern::checkStrDigit(strR_.substr(0, i)) && Pattern::checkStrDigit(strR_.substr(i + 1)))
+					R_ = make_pair(cpp_int(strR_.substr(0, i)), cpp_int(strR_.substr(i + 1)));
+				else
+					throw string{ "\nПараметр R\' = (" + to_string(R_.first) + ", " + to_string(R_.second) + ") бы изменён!" };
+			}
+		}
+		if (R_.second * R_.second % p != (R_.first * R_.first * R_.first + b) % p)
+			throw string{ "\nПараметр R\' = (" + to_string(R_.first) + ", " + to_string(R_.second) + ") не принадлежит кривой!" };
+		cpp_int e_ = Pattern::hashFun(m, R_) % r;
+		cout << "e\' = " << e_;
+
+		if (e_ == cpp_int(File::read("e.txt")))
+			cout << "\nПодпись действительна \n";
 		else
-			mCode += book[str[i]];
+			cout << "\nПодпись недействительна \n";
 	}
-	cpp_int m = cpp_int(mCode);
+};
 
-	cpp_int s = cpp_int(File::read("s.txt"));
-	cpp_int e = cpp_int(File::read("e.txt"));
-
-	if (!Pattern::miller_rabin(p))
-		throw string{ "\nПараметр p = " + to_string(p) + " не является простым числом!" };
-	if (b < 1 || b > p - 1)
-		throw string{ "\nПараметр b = " + to_string(b) + " должен быть в диапазоне 1 < b < p" };
-	if (Q.second * Q.second % p != (Q.first * Q.first * Q.first + b) % p)
-		throw string{ "\nПараметр Q = (" + to_string(Q.first) + ", " + to_string(Q.second) + ") не принадлежит кривой!" };
-	if (PointArithmetic::scalarMult(r, Q, p).first != -1)
-		throw string{ "\nПараметр Q = (" + to_string(Q.first) + ", " + to_string(Q.second) + ") или r = " + to_string(r) + " не является образующим!" };
-	if (P.second * P.second % p != (P.first * P.first * P.first + b) % p)
-		throw string{ "\nПараметр P = (" + to_string(P.first) + ", " + to_string(P.second) + ") не принадлежит кривой" };
-
-	pair <cpp_int, cpp_int> sQ = PointArithmetic::scalarMult(s, Q, p);
-	pair <cpp_int, cpp_int> eP = PointArithmetic::scalarMult(e, P, p);
-	pair <cpp_int, cpp_int> R_ = PointArithmetic::addPoints(sQ, make_pair(eP.first, -eP.second), p);
-	cpp_int e_ = Pattern::hashFun(m, R_) % r;
-
-	cout << "\nR\' = (" << R_.first << ", " << R_.second << ")" << "\ne\' = " << e_ << "\ne = " << e;
-	if (e_ == e)
-		cout << "\nПодпись действительна \n";
-	else
-		cout << "\nПодпись недействительна \n";
-}
 
 
 int main() {
@@ -723,16 +734,17 @@ int main() {
 	cout << "\tПротокол цифровой подписи Шнорра на эллиптических кривых";
 
 	string choice;
+	Signature sign;
 	for (;;) {
 		cout << "\n1 - Генерация ключей \n2 - Создание подписи \n3 - Проверка подписи \n";
 		cin >> choice;
 		try {
 			if (choice == "1")
-				genOpenKeys();
+				sign.genKeys();
 			else if (choice == "2")
-				createSignature();
+				sign.createSignature();
 			else if (choice == "3")
-				checkSignature();
+				sign.checkSignature();
 			else
 				cout << "\nIncorrect! Try again \n";
 		}
